@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>165 攻防数据对比报告</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f6f8; color: #1d2129; padding: 32px 16px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #86909c; font-size: 13px; margin-bottom: 24px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .card .n { font-size: 22px; font-weight: 700; }
+  .card .l { font-size: 12px; color: #86909c; margin-top: 2px; }
+  .section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .section h2 { font-size: 17px; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0f1f3; vertical-align: top; }
+  th { font-size: 12px; color: #86909c; font-weight: 500; }
+  .cw { font-weight: 600; white-space: nowrap; }
+  .mono { font-family: Menlo, monospace; font-size: 12px; }
+  .b { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 10px; color: #fff; }
+  .s-error { background: #e5484d; } .s-medium { background: #f76b15; }
+  .concl { background: #fff8e6; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; border: 1px solid #f5e0b8; }
+  .concl h2 { font-size: 16px; margin-bottom: 8px; color: #b8860b; }
+  .concl li { font-size: 13px; line-height: 1.8; margin-left: 18px; color: #4e5969; }
+  .foot { color: #86909c; font-size: 12px; text-align: center; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎯 攻击方 vs 防守方 数据对比</h1>
+  <div class="sub">目标 165.154.226.119 · 攻击方 = Strix 渗透报告 · 防守方 = 服务器日志/数据库 · 时间统一为服务器本地时区（Asia/Taipei, +0800）· 攻击窗口 2026-08-19 01:44~05:30</div>
+
+  <div class="cards">
+    <div class="card"><div class="n">7,695</div><div class="l">攻击窗口 HTTP 请求</div></div>
+    <div class="card"><div class="n">7,262</div><div class="l">峰值 30 分钟（02:00-02:30）</div></div>
+    <div class="card"><div class="n">92%</div><div class="l">来自单一 IP 183.210.193.143</div></div>
+    <div class="card"><div class="n">0</div><div class="l">SSH 攻击记录（纯 HTTP）</div></div>
+    <div class="card"><div class="n">4/4</div><div class="l">漏洞被防守方数据印证</div></div>
+  </div>
+
+  <div class="section">
+    <h2>① 攻击方发现（Strix / deepseek-v4-pro）</h2>
+    <table><tr><th>CWE</th><th>漏洞</th><th>严重度</th><th>描述</th></tr><tr><td class="cw">CWE-306</td><td>未认证访问管理接口</td><td><span class="b s-error">ERROR</span></td><td>GET /api/tasks、/api/results/{task_id} 无认证可读全部扫描任务与结果</td></tr><tr><td class="cw">CWE-1392</td><td>默认管理员口令</td><td><span class="b s-error">ERROR</span></td><td>admin/admin123 可直接登录</td></tr><tr><td class="cw">CWE-918</td><td>服务端请求伪造 SSRF</td><td><span class="b s-medium">MEDIUM</span></td><td>POST /api/manual 的 urls 参数可访问任意内网/云元数据</td></tr><tr><td class="cw">CWE-497</td><td>监控端点信息泄露</td><td><span class="b s-medium">MEDIUM</span></td><td>GET /stream（8787 端口）未认证泄露扫描状态与 LLM 计费</td></tr></table>
+  </div>
+
+  <div class="section">
+    <h2>② 防守方印证（165 日志与数据库）</h2>
+    <table><tr><th>CWE</th><th>nginx 访问日志证据</th><th>数据库证据</th><th>印证</th></tr><tr><td class="cw">CWE-306</td><td>GET /api/tasks → 200（7 次，返回 8-14KB 任务数据）</td><td>—</td><td>✅ 实锤</td></tr><tr><td class="cw">CWE-306</td><td>GET /api/results/ → 200（130 次请求中 18 次成功读取）</td><td>—</td><td>✅ 实锤</td></tr><tr><td class="cw">CWE-1392</td><td>POST /api/auth/login → 225 次，其中 25 次返回 200（登录成功）</td><td>—</td><td>✅ 实锤</td></tr><tr><td class="cw">CWE-918</td><td>POST /api/manual → 26 次</td><td>scan_tasks 表新增 11+ 条内网扫描任务（02:43-02:54）</td><td>✅ 实锤</td></tr><tr><td class="cw">CWE-497</td><td>80 端口无 /stream 记录（直连 8787，nginx 盲区）</td><td>—</td><td>⚠️ 检测盲区</td></tr></table>
+  </div>
+
+  <div class="section">
+    <h2>③ SSRF 利用证据链（scan_tasks 数据库，攻击留下 11 条内网扫描任务）</h2>
+    <table><tr><th>时间</th><th>内网目标</th><th>说明</th></tr><tr><td>02:43:16</td><td class="mono">http://metadata.tencentyun.com/latest/meta-data/</td><td>腾讯云元数据</td></tr><tr><td>02:43:17</td><td class="mono">http://100.100.100.200/latest/meta-data/</td><td>阿里云元数据</td></tr><tr><td>02:46:26</td><td class="mono">http://127.0.0.1:8081/</td><td>httpbin 内网探测</td></tr><tr><td>02:47:04</td><td class="mono">http://127.0.0.1:8000/api/auth/status</td><td>内网认证接口探测</td></tr><tr><td>02:47:15</td><td class="mono">http://165.154.226.119/</td><td>本机</td></tr><tr><td>02:47:18</td><td class="mono">http://127.0.0.1:5566/health</td><td>内部 worker 健康检查</td></tr><tr><td>02:48:56</td><td class="mono">http://169.254.169.254/latest/meta-data/</td><td>AWS 云元数据</td></tr><tr><td>02:51:59</td><td class="mono">http://127.0.0.1:8000/</td><td>内部服务</td></tr><tr><td>02:52:13</td><td class="mono">http://127.0.0.1:8081/ip</td><td>httpbin</td></tr><tr><td>02:54:34</td><td class="mono">http://127.0.0.1:2375/version</td><td>Docker API</td></tr><tr><td>02:54:35</td><td class="mono">http://127.0.0.1:5000/</td><td>内部服务</td></tr></table>
+  </div>
+
+  <div class="concl">
+    <h2>📌 对比结论</h2>
+    <ul>
+      <li><b>3/4 漏洞被防守方日志实锤</b>：CWE-306（/api/tasks、/api/results 未认证 200）、CWE-1392（admin/admin123 登录成功 25 次）、CWE-918（scan_tasks 留下 11 条内网 SSRF 任务，含三大云元数据地址 + Docker API）</li>
+      <li><b>检测盲区</b>：CWE-497 的 /stream 在 8787 端口直连，nginx（80）完全无记录——监控只覆盖了反代入口</li>
+      <li><b>无 WAF/IDS 拦截</b>：7,695 个请求 4 小时内全部放行，无任何告警或拦截动作；仅有应用层 403（写接口"需要管理员权限"，共 30 次）</li>
+      <li><b>攻击未被发现</b>：auth.log 攻击窗口 0 条 SSH 记录（纯 HTTP 攻击绕过了 SSH 层监控），应用日志 36,163 行但无告警</li>
+      <li><b>应用被攻击触发代码异常</b>：/api/manual 收到 Strix 的 urls 参数后抛 AttributeError（'list' object has no attribute 'strip'）——攻击同时暴露了应用代码缺陷</li>
+      <li><b>防守改进优先级</b>：① 修改默认口令 ② /api 读接口统一鉴权 ③ 全端口流量审计（不只 nginx 80）④ 引入 WAF/IDS 或访问频率告警 ⑤ /api/manual 入参校验</li>
+    </ul>
+  </div>
+
+  <div class="foot">数据来源：/var/log/nginx/access.log · /opt/supply-chain-analyzer/data/scans.db · journalctl · 生成于 2026-08-19</div>
+</div>
+</body>
+</html>
