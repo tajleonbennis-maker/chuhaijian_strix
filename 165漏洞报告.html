@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>165 靶机 Strix 渗透测试报告</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f6f8; color: #1d2129; padding: 32px 16px; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #86909c; font-size: 13px; margin-bottom: 24px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat { background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .stat .n { font-size: 24px; font-weight: 700; }
+  .stat .l { font-size: 12px; color: #86909c; margin-top: 2px; }
+  .vuln { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .vhead { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .sev { color: #fff; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 10px; }
+  .cwe { font-size: 12px; color: #86909c; }
+  .vuln h3 { font-size: 16px; margin-bottom: 8px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: #4e5969; margin-bottom: 10px; }
+  .desc { font-size: 13px; line-height: 1.7; color: #4e5969; white-space: pre-wrap; }
+  .foot { color: #86909c; font-size: 12px; text-align: center; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎯 165.154.226.119 渗透测试报告</h1>
+  <div class="sub">Strix 1.5.3 · deepseek-v4-pro · standard 模式 · 目标应用: Supply Chain Security Analyzer</div>
+  <div class="stats">
+    <div class="stat"><div class="n">4</div><div class="l">发现漏洞</div></div>
+    <div class="stat"><div class="n">367</div><div class="l">LLM 请求</div></div>
+    <div class="stat"><div class="n">26.5M</div><div class="l">tokens 消耗</div></div>
+    <div class="stat"><div class="n">completed</div><div class="l">扫描状态</div></div>
+  </div>
+  
+    <div class="vuln" style="border-left: 4px solid #f7b500">
+      <div class="vhead">
+        <span class="sev" style="background:#f7b500">MEDIUM · CVSS 5.3</span>
+        <span class="cwe">CWE-497</span>
+      </div>
+      <h3>Unauthenticated monitoring SSE endpoint discloses internal scan and LLM billing data</h3>
+      <div class="meta">
+        <span><b>端点</b> GET /stream</span>
+        <span><b>目标</b> http://165.154.226.119:8787</span>
+        <span><b>时间</b> 2026-08-18 18:58:02 UTC</span>
+      </div>
+      <p class="desc">Unauthenticated monitoring SSE endpoint discloses internal scan and LLM billing data
+
+The monitoring Server-Sent Events endpoint at `/stream` is reachable without authentication and streams an internal scan status snapshot that reveals the scanning pipeline configuration, per-agent LLM model names, and accumulated billing/cost metrics to any anonymous client.</p>
+    </div>
+    <div class="vuln" style="border-left: 4px solid #f76b15">
+      <div class="vhead">
+        <span class="sev" style="background:#f76b15">HIGH · CVSS 7.5</span>
+        <span class="cwe">CWE-306</span>
+      </div>
+      <h3>Unauthenticated access to admin scan tasks and results via /api/tasks and /api/results/{task_id}</h3>
+      <div class="meta">
+        <span><b>端点</b> GET /api/results/{task_id}</span>
+        <span><b>目标</b> http://165.154.226.119</span>
+        <span><b>时间</b> 2026-08-18 18:58:16 UTC</span>
+      </div>
+      <p class="desc">Unauthenticated access to admin scan tasks and results via /api/tasks and /api/results/{task_id}
+
+The backend read endpoints at `http://165.154.226.119` expose administrative scan tasks and their full results to any unauthenticated client. An attacker can enumerate every task, then retrieve each task&#x27;s complete scan output — including target URLs, discovered assets, API endpoints, vulnerabilities with CVE identifiers and CVSS scores, exploit details, AI analysis, exposure findings, and supply-chain data — without any cookie or credential.</p>
+    </div>
+    <div class="vuln" style="border-left: 4px solid #e5484d">
+      <div class="vhead">
+        <span class="sev" style="background:#e5484d">CRITICAL · CVSS 9.1</span>
+        <span class="cwe">CWE-1392</span>
+      </div>
+      <h3>Default administrator credential (admin/admin123) allows full administrative access</h3>
+      <div class="meta">
+        <span><b>端点</b> POST /api/auth/login</span>
+        <span><b>目标</b> http://165.154.226.119</span>
+        <span><b>时间</b> 2026-08-18 18:58:24 UTC</span>
+      </div>
+      <p class="desc">Default administrator credential (admin/admin123) allows full administrative access
+
+The web application accepts a default administrator credential pair (`admin` / `admin123`) at the login endpoint. An unauthenticated attacker can authenticate with this well-known default credential and obtain a valid administrator session, enabling full administrative access to the application.</p>
+    </div>
+    <div class="vuln" style="border-left: 4px solid #30a46c">
+      <div class="vhead">
+        <span class="sev" style="background:#30a46c">LOW · CVSS 2.7</span>
+        <span class="cwe">CWE-918</span>
+      </div>
+      <h3>Server-Side Request Forgery via urls parameter in /api/manual</h3>
+      <div class="meta">
+        <span><b>端点</b> POST /api/manual</span>
+        <span><b>目标</b> http://165.154.226.119</span>
+        <span><b>时间</b> 2026-08-18 18:58:35 UTC</span>
+      </div>
+      <p class="desc">Server-Side Request Forgery via urls parameter in /api/manual
+
+The `urls` parameter of the `/api/manual` endpoint causes the application server to issue HTTP requests to attacker-controlled destinations without validating or restricting the target, enabling an authenticated administrator to reach loopback services on the same host.</p>
+    </div>
+  <div class="foot">生成于 2026-08-19 · 授权目标评估 · 原始数据: 165_findings.sarif</div>
+</div>
+</body>
+</html>

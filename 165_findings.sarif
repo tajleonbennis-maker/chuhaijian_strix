@@ -1,0 +1,330 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Strix",
+          "informationUri": "https://strix.ai",
+          "rules": [
+            {
+              "id": "CWE-497",
+              "name": "Unauthenticated monitoring SSE endpoint discloses internal scan and LLM billing data",
+              "shortDescription": {
+                "text": "Unauthenticated monitoring SSE endpoint discloses internal scan and LLM billing data"
+              },
+              "fullDescription": {
+                "text": "The monitoring Server-Sent Events endpoint at `/stream` is reachable without authentication and streams an internal scan status snapshot that reveals the scanning pipeline configuration, per-agent LLM model names, and accumulated billing/cost metrics to any anonymous client."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "The monitoring Server-Sent Events endpoint at `/stream` is reachable without authentication and streams an internal scan status snapshot that reveals the scanning pipeline configuration, per-agent LLM model names, and accumulated billing/cost metrics to any anonymous client.\n\nAny unauthenticated network client can retrieve the full operational state of the internal scanning system, including the target being scanned, the internal scan phase map, the LLM models in use, per-agent token/turn/duration metrics, and aggregate LLM spend (approximately 5.94 USD in the observed snapshot). No credentials, tokens, PII, or prompt content are exposed. The primary consequences are disclosure of restricted operational metadata and LLM configuration/billing information that could aid reconnaissance of the platform and its scanning workflows.\n\nRequire authentication and authorization on the monitoring SSE endpoint so that only authorized operators can access it. Restrict the endpoint to loopback or an administrative network segment rather than exposing it on the public interface. Redact or omit sensitive fields such as the scan target, model identifiers, per-agent billing metrics, and internal phase statuses from any response served to non-privileged viewers, and consider serving only aggregate metrics without operational internals.",
+                "markdown": "The monitoring Server-Sent Events endpoint at `/stream` is reachable without authentication and streams an internal scan status snapshot that reveals the scanning pipeline configuration, per-agent LLM model names, and accumulated billing/cost metrics to any anonymous client.\n\nAny unauthenticated network client can retrieve the full operational state of the internal scanning system, including the target being scanned, the internal scan phase map, the LLM models in use, per-agent token/turn/duration metrics, and aggregate LLM spend (approximately 5.94 USD in the observed snapshot). No credentials, tokens, PII, or prompt content are exposed. The primary consequences are disclosure of restricted operational metadata and LLM configuration/billing information that could aid reconnaissance of the platform and its scanning workflows.\n\nRequire authentication and authorization on the monitoring SSE endpoint so that only authorized operators can access it. Restrict the endpoint to loopback or an administrative network segment rather than exposing it on the public interface. Redact or omit sensitive fields such as the scan target, model identifiers, per-agent billing metrics, and internal phase statuses from any response served to non-privileged viewers, and consider serving only aggregate metrics without operational internals."
+              },
+              "properties": {
+                "security-severity": "5.3",
+                "tags": [
+                  "security",
+                  "CWE-497",
+                  "stride:T",
+                  "stride:I"
+                ]
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/497.html"
+            },
+            {
+              "id": "CWE-306",
+              "name": "Unauthenticated access to admin scan tasks and results via /api/tasks and /api/results/{task_id}",
+              "shortDescription": {
+                "text": "Unauthenticated access to admin scan tasks and results via /api/tasks and /api/results/{task_id}"
+              },
+              "fullDescription": {
+                "text": "The backend read endpoints at `http://165.154.226.119` expose administrative scan tasks and their full results to any unauthenticated client. An attacker can enumerate every task, then retrieve each task's complete scan output — including target URLs, discovered assets, API endpoints, vulnerabilities with CVE identifiers and CVSS scores, exploit details, AI analysis, exposure findings, and supply-chain data — without any cookie or credential."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "text": "The backend read endpoints at `http://165.154.226.119` expose administrative scan tasks and their full results to any unauthenticated client. An attacker can enumerate every task, then retrieve each task's complete scan output — including target URLs, discovered assets, API endpoints, vulnerabilities with CVE identifiers and CVSS scores, exploit details, AI analysis, exposure findings, and supply-chain data — without any cookie or credential.\n\nComplete confidentiality breach of the application's own security-scanning results and the underlying scan infrastructure. The exposed data reveals internal/cloud-metadata targets (e.g. `http://169.254.169.254/latest/meta-data/`, `http://127.0.0.1:8081/`), harvested assets, API endpoints, and vulnerability/payload detail across tenant scan jobs. An anonymous attacker gains sensitive operational and intelligence data with no authentication, while equivalent write endpoints correctly enforce administrator-only access.\n\nEnforce the same authentication and authorization gate that already protects the write endpoints on all read endpoints. Require a valid, authenticated session for `GET /api/tasks`, `GET /api/analyze/status/{task_id}`, and `GET /api/results/{task_id}`, and restrict these reads to administrator principals. Return `401` for unauthenticated requests and `403` for authenticated non-admin callers, mirroring the existing `需要管理员权限` behavior on `POST /api/analyze`. Apply the check server-side on each request (ideally via shared middleware or a decorator) rather than relying on client-side hiding, and verify that nonexistent resources return `404` only after the caller has passed the authorization check.",
+                "markdown": "The backend read endpoints at `http://165.154.226.119` expose administrative scan tasks and their full results to any unauthenticated client. An attacker can enumerate every task, then retrieve each task's complete scan output — including target URLs, discovered assets, API endpoints, vulnerabilities with CVE identifiers and CVSS scores, exploit details, AI analysis, exposure findings, and supply-chain data — without any cookie or credential.\n\nComplete confidentiality breach of the application's own security-scanning results and the underlying scan infrastructure. The exposed data reveals internal/cloud-metadata targets (e.g. `http://169.254.169.254/latest/meta-data/`, `http://127.0.0.1:8081/`), harvested assets, API endpoints, and vulnerability/payload detail across tenant scan jobs. An anonymous attacker gains sensitive operational and intelligence data with no authentication, while equivalent write endpoints correctly enforce administrator-only access.\n\nEnforce the same authentication and authorization gate that already protects the write endpoints on all read endpoints. Require a valid, authenticated session for `GET /api/tasks`, `GET /api/analyze/status/{task_id}`, and `GET /api/results/{task_id}`, and restrict these reads to administrator principals. Return `401` for unauthenticated requests and `403` for authenticated non-admin callers, mirroring the existing `需要管理员权限` behavior on `POST /api/analyze`. Apply the check server-side on each request (ideally via shared middleware or a decorator) rather than relying on client-side hiding, and verify that nonexistent resources return `404` only after the caller has passed the authorization check."
+              },
+              "properties": {
+                "security-severity": "7.5",
+                "tags": [
+                  "security",
+                  "CWE-306",
+                  "stride:S",
+                  "stride:E"
+                ]
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/306.html"
+            },
+            {
+              "id": "CWE-1392",
+              "name": "Default administrator credential (admin/admin123) allows full administrative access",
+              "shortDescription": {
+                "text": "Default administrator credential (admin/admin123) allows full administrative access"
+              },
+              "fullDescription": {
+                "text": "The web application accepts a default administrator credential pair (`admin` / `admin123`) at the login endpoint. An unauthenticated attacker can authenticate with this well-known default credential and obtain a valid administrator session, enabling full administrative access to the application."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "text": "The web application accepts a default administrator credential pair (`admin` / `admin123`) at the login endpoint. An unauthenticated attacker can authenticate with this well-known default credential and obtain a valid administrator session, enabling full administrative access to the application.\n\nAn unauthenticated remote attacker who supplies the default credential gains an authenticated administrator session. With this session the attacker can invoke administrator-only functionality (for example the `/api/manual` endpoint, which is otherwise rejected with a 403 authorization error) and access other administrative operations. This constitutes complete compromise of the application's administrative functionality.\n\nRemove the default administrator credential or force a strong, unique administrator password during deployment, and require password rotation before first use. Enforce rate limiting and account lockout on the login endpoint to hinder credential guessing. Additionally, set the `Secure` and `SameSite` attributes on the `session_id` cookie so it is only transmitted over HTTPS and is protected against cross-site request abuse.",
+                "markdown": "The web application accepts a default administrator credential pair (`admin` / `admin123`) at the login endpoint. An unauthenticated attacker can authenticate with this well-known default credential and obtain a valid administrator session, enabling full administrative access to the application.\n\nAn unauthenticated remote attacker who supplies the default credential gains an authenticated administrator session. With this session the attacker can invoke administrator-only functionality (for example the `/api/manual` endpoint, which is otherwise rejected with a 403 authorization error) and access other administrative operations. This constitutes complete compromise of the application's administrative functionality.\n\nRemove the default administrator credential or force a strong, unique administrator password during deployment, and require password rotation before first use. Enforce rate limiting and account lockout on the login endpoint to hinder credential guessing. Additionally, set the `Secure` and `SameSite` attributes on the `session_id` cookie so it is only transmitted over HTTPS and is protected against cross-site request abuse."
+              },
+              "properties": {
+                "security-severity": "9.1",
+                "tags": [
+                  "security",
+                  "CWE-1392",
+                  "stride:T",
+                  "stride:I"
+                ]
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/1392.html"
+            },
+            {
+              "id": "CWE-918",
+              "name": "Server-Side Request Forgery via urls parameter in /api/manual",
+              "shortDescription": {
+                "text": "Server-Side Request Forgery via urls parameter in /api/manual"
+              },
+              "fullDescription": {
+                "text": "The `urls` parameter of the `/api/manual` endpoint causes the application server to issue HTTP requests to attacker-controlled destinations without validating or restricting the target, enabling an authenticated administrator to reach loopback services on the same host."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "help": {
+                "text": "The `urls` parameter of the `/api/manual` endpoint causes the application server to issue HTTP requests to attacker-controlled destinations without validating or restricting the target, enabling an authenticated administrator to reach loopback services on the same host.\n\nAn authenticated administrator can force the application server to fetch arbitrary internal URLs. The validated proof-of-concept demonstrated server-side requests to loopback services on `127.0.0.1:8081`, `127.0.0.1:8000`, and `127.0.0.1:5566`, disclosing scanner-derived metadata about those services (discovered endpoints and the `gunicorn`/Flask server fingerprints). The response is limited to summarized scan results rather than full response bodies, and the same loopback services are also directly reachable on the public IP, which bounds the demonstrated confidentiality impact.\n\nValidate and restrict the destination supplied in `urls` before any outbound request is made. Deny loopback, link-local, private, and reserved address ranges (including `127.0.0.0/8`, `169.254.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, and the cloud metadata address `169.254.169.254`), resolve hostnames before connecting and reject any that resolve to such ranges, and prefer an explicit allowlist of permitted destinations. Disable non-HTTP schemes such as `file`, `gopher`, `dict`, and `ftp`. Do not reflect scanner-derived internal service metadata (discovered endpoints, server headers, and fingerprints) back to clients, or redact it before returning results.",
+                "markdown": "The `urls` parameter of the `/api/manual` endpoint causes the application server to issue HTTP requests to attacker-controlled destinations without validating or restricting the target, enabling an authenticated administrator to reach loopback services on the same host.\n\nAn authenticated administrator can force the application server to fetch arbitrary internal URLs. The validated proof-of-concept demonstrated server-side requests to loopback services on `127.0.0.1:8081`, `127.0.0.1:8000`, and `127.0.0.1:5566`, disclosing scanner-derived metadata about those services (discovered endpoints and the `gunicorn`/Flask server fingerprints). The response is limited to summarized scan results rather than full response bodies, and the same loopback services are also directly reachable on the public IP, which bounds the demonstrated confidentiality impact.\n\nValidate and restrict the destination supplied in `urls` before any outbound request is made. Deny loopback, link-local, private, and reserved address ranges (including `127.0.0.0/8`, `169.254.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, and the cloud metadata address `169.254.169.254`), resolve hostnames before connecting and reject any that resolve to such ranges, and prefer an explicit allowlist of permitted destinations. Disable non-HTTP schemes such as `file`, `gopher`, `dict`, and `ftp`. Do not reflect scanner-derived internal service metadata (discovered endpoints, server headers, and fingerprints) back to clients, or redact it before returning results."
+              },
+              "properties": {
+                "security-severity": "2.7",
+                "tags": [
+                  "security",
+                  "CWE-918",
+                  "stride:T",
+                  "stride:I"
+                ]
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html"
+            }
+          ],
+          "version": "1.5.3"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CWE-497",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Unauthenticated monitoring SSE endpoint discloses internal scan and LLM billing data\n\nThe monitoring Server-Sent Events endpoint at `/stream` is reachable without authentication and streams an internal scan status snapshot that reveals the scanning pipeline configuration, per-agent LLM model names, and accumulated billing/cost metrics to any anonymous client."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/stream",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "7e1484cb2d1665b63adc18c9f85a83712ec75c955309d3d30e599edf96523aa0"
+          },
+          "properties": {
+            "security-severity": "5.3",
+            "strix_vuln_class_hash": "061b4a78be078d510b7f1402c049c186399e7a17e80ae7a5ae485286384597fc",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0001",
+              "severity": "medium",
+              "cvss": 5.3,
+              "timestamp": "2026-08-18 18:58:02 UTC",
+              "target": "http://165.154.226.119:8787",
+              "endpoint": "/stream",
+              "method": "GET",
+              "cwe": "CWE-497",
+              "impact": "Any unauthenticated network client can retrieve the full operational state of the internal scanning system, including the target being scanned, the internal scan phase map, the LLM models in use, per-agent token/turn/duration metrics, and aggregate LLM spend (approximately 5.94 USD in the observed snapshot). No credentials, tokens, PII, or prompt content are exposed. The primary consequences are disclosure of restricted operational metadata and LLM configuration/billing information that could aid reconnaissance of the platform and its scanning workflows.",
+              "technical_analysis": "The endpoint responds to an unauthenticated `GET /stream` request with HTTP 200 and `Content-Type: text/event-stream` served by `BaseHTTP/0.6 Python/3.12.3`. The response is not a long-lived event feed but a single JSON snapshot (approximately 19 KB) that is pushed once and then the connection closes. No cookie, token, or other credential is required.\n\nThe JSON snapshot discloses a structured view of the internal scanning system:\n\n- A `scan` object containing the scan identifier, the third-party target URL being assessed, scan status, cost, and the model identifier `deepseek-v4-flash`.\n- A `phases` array of 13 entries representing the internal scan phase map, including statuses for injection, XSS, authentication, authorization, SSRF, exploitation, and reporting stages.\n- An `agents` array of 54 entries exposing per-agent `cost_usd`, `duration_ms`, `turns`, and model fields.\n- An `events` array of 136 entries representing the activity timeline (detail fields were empty in the observed response).\n\nThe disclosure also reveals the LLM models in use (`deepseek-v4-flash` and `qwen3.8-max`) and an aggregate agent `cost_usd` of approximately 5.94. The root cause is that the monitoring SSE handler performs no authentication or authorization and emits internal operational state directly to anonymous clients.",
+              "remediation_steps": "Require authentication and authorization on the monitoring SSE endpoint so that only authorized operators can access it. Restrict the endpoint to loopback or an administrative network segment rather than exposing it on the public interface. Redact or omit sensitive fields such as the scan target, model identifiers, per-agent billing metrics, and internal phase statuses from any response served to non-privileged viewers, and consider serving only aggregate metrics without operational internals.",
+              "poc": {
+                "description": "1. Establish a direct HTTP connection to the target without supplying any credentials, cookies, or tokens.\n2. Issue `GET /stream` and read the streamed body until the connection closes.\n3. Parse the received payload as JSON and inspect the top-level keys.\n4. Observe that the response contains `scan`, `phases`, `agents`, and `events` objects exposing internal scan configuration, phase statuses, LLM model names, and per-agent billing metrics.",
+                "script_available": true
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-306",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Unauthenticated access to admin scan tasks and results via /api/tasks and /api/results/{task_id}\n\nThe backend read endpoints at `http://165.154.226.119` expose administrative scan tasks and their full results to any unauthenticated client. An attacker can enumerate every task, then retrieve each task's complete scan output — including target URLs, discovered assets, API endpoints, vulnerabilities with CVE identifiers and CVSS scores, exploit details, AI analysis, exposure findings, and supply-chain data — without any cookie or credential."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/api/results/{task_id}",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "996f504c974f4cd960da34256c05f786f0f24f1144a45311be593e9c04813b68"
+          },
+          "properties": {
+            "security-severity": "7.5",
+            "strix_vuln_class_hash": "20a04b247dace576714edbaea7d936bcdaaa2041ee5f25a881ff5c884d6d5d89",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0002",
+              "severity": "high",
+              "cvss": 7.5,
+              "timestamp": "2026-08-18 18:58:16 UTC",
+              "target": "http://165.154.226.119",
+              "endpoint": "/api/results/{task_id}",
+              "method": "GET",
+              "cwe": "CWE-306",
+              "impact": "Complete confidentiality breach of the application's own security-scanning results and the underlying scan infrastructure. The exposed data reveals internal/cloud-metadata targets (e.g. `http://169.254.169.254/latest/meta-data/`, `http://127.0.0.1:8081/`), harvested assets, API endpoints, and vulnerability/payload detail across tenant scan jobs. An anonymous attacker gains sensitive operational and intelligence data with no authentication, while equivalent write endpoints correctly enforce administrator-only access.",
+              "technical_analysis": "The read endpoints `GET /api/tasks`, `GET /api/analyze/status/{task_id}`, and `GET /api/results/{task_id}` return data to anonymous callers with no session or authorization check. This is confirmed by the behavioral asymmetry between reads and writes:\n\n- `GET /api/auth/status` without a cookie returns `200 {\"is_admin\":false,\"logged_in\":false,\"role\":\"guest\"}`, establishing that an unauthenticated caller has only a clean `guest` identity.\n- `GET /api/tasks` without a cookie returns `200` and enumerates 33 tasks, each exposing `task_id`, `query_text` (target URLs), `mode`, `status`, and `progress`.\n- `GET /api/analyze/status/{task_id}` and `GET /api/results/{task_id}` without a cookie both return `200` with full task status and complete scan results respectively.\n- The write endpoints `POST /api/analyze`, `POST /api/manual`, and `POST /api/analyze/cancel/{task_id}` without a cookie return `403 {\"error\":\"需要管理员权限\"}`, demonstrating the application *does* have an administrator authorization gate — it is simply not applied to the read endpoints.\n- A nonexistent read id returns `404 {\"error\":\"任务不存在\"}` rather than `401`/`403`, confirming reads never reach an authorization check.\n\n`GET /api/results/{task_id}` is the most sensitive endpoint: it returns the full scan output, including `summary` (risk level and severity), `assets`, `api_endpoints`, `vulnerabilities` (CVE identifiers, CVSS scores, payloads), `exploits`, `ai_analysis`, `exposure_findings`, and `supply_chains`. One retrieved task contained 100 assets, 118 vulnerabilities, and 1,350 API endpoints. Because task identifiers are sequential integers surfaced by the public `/api/tasks` listing, an attacker can trivially enumerate and download every stored result.",
+              "remediation_steps": "Enforce the same authentication and authorization gate that already protects the write endpoints on all read endpoints. Require a valid, authenticated session for `GET /api/tasks`, `GET /api/analyze/status/{task_id}`, and `GET /api/results/{task_id}`, and restrict these reads to administrator principals. Return `401` for unauthenticated requests and `403` for authenticated non-admin callers, mirroring the existing `需要管理员权限` behavior on `POST /api/analyze`. Apply the check server-side on each request (ideally via shared middleware or a decorator) rather than relying on client-side hiding, and verify that nonexistent resources return `404` only after the caller has passed the authorization check.",
+              "poc": {
+                "description": "1. Send an unauthenticated `GET` request to `http://165.154.226.119/api/tasks`.\n2. Confirm the response is `200` and parse the returned JSON list to obtain a valid `task_id` (e.g. the first element).\n3. Send an unauthenticated `GET` request to `http://165.154.226.119/api/results/{task_id}` using the captured identifier.\n4. Confirm the response is `200` and contains the full scan result object (`summary`, `assets`, `api_endpoints`, `vulnerabilities`, etc.).\n5. Optionally enumerate all 33 `task_id` values and download every result to demonstrate complete exposure.",
+                "script_available": true
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-1392",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "Default administrator credential (admin/admin123) allows full administrative access\n\nThe web application accepts a default administrator credential pair (`admin` / `admin123`) at the login endpoint. An unauthenticated attacker can authenticate with this well-known default credential and obtain a valid administrator session, enabling full administrative access to the application."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/api/auth/login",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "a249cfde3f016fbc63aeae0a42101d26803f3d2a15719816eecfb094c167c427"
+          },
+          "properties": {
+            "security-severity": "9.1",
+            "strix_vuln_class_hash": "a5a43844533f1c971522beab622e8319ba38e24ccca3e480a78f272c6176627c",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0003",
+              "severity": "critical",
+              "cvss": 9.1,
+              "timestamp": "2026-08-18 18:58:24 UTC",
+              "target": "http://165.154.226.119",
+              "endpoint": "/api/auth/login",
+              "method": "POST",
+              "cwe": "CWE-1392",
+              "impact": "An unauthenticated remote attacker who supplies the default credential gains an authenticated administrator session. With this session the attacker can invoke administrator-only functionality (for example the `/api/manual` endpoint, which is otherwise rejected with a 403 authorization error) and access other administrative operations. This constitutes complete compromise of the application's administrative functionality.",
+              "technical_analysis": "The authentication endpoint `/api/auth/login` accepts a JSON body containing a `role` and a `password`. Submitting `{\"role\":\"admin\",\"password\":\"admin123\"}` returns HTTP 200 with `{\"role\":\"admin\",\"session_id\":\"<32-hex>\"}` and issues a `session_id` cookie. The resulting session is recognized as administrator by `/api/auth/status`, which returns `{\"is_admin\":true,\"logged_in\":true,\"role\":\"admin\"}`.\n\nThe credential is a genuine default credential rather than a universal authentication bypass: incorrect passwords such as `admin`, `123456`, and `wrongpass` are rejected with HTTP 401 and `{\"error\":\"密码错误\"}` (incorrect password). The administrator session is required for privileged endpoints: `POST /api/manual` returns HTTP 200 with `{\"status\":\"pending\",\"task_id\":\"<hex>\"}` when the administrator cookie is present, but returns HTTP 403 with `{\"error\":\"需要管理员权限\"}` (administrator permission required) without it.\n\nThis confirms that the application ships with a fixed, publicly guessable default administrator password that has not been changed, allowing complete administrative takeover by any remote attacker.",
+              "remediation_steps": "Remove the default administrator credential or force a strong, unique administrator password during deployment, and require password rotation before first use. Enforce rate limiting and account lockout on the login endpoint to hinder credential guessing. Additionally, set the `Secure` and `SameSite` attributes on the `session_id` cookie so it is only transmitted over HTTPS and is protected against cross-site request abuse.",
+              "poc": {
+                "description": "1. Confirm unauthenticated state by sending `GET /api/auth/status` without a cookie and observe `{\"is_admin\":false,\"logged_in\":false,\"role\":\"guest\"}`.\n2. Authenticate by sending `POST /api/auth/login` with the JSON body `{\"role\":\"admin\",\"password\":\"admin123\"}` and observe HTTP 200 with a `session_id` value and a `Set-Cookie: session_id=<hex>` header.\n3. Re-send `GET /api/auth/status` with the returned cookie and observe `{\"is_admin\":true,\"logged_in\":true,\"role\":\"admin\"}`.\n4. Invoke the privileged endpoint `POST /api/manual` with the cookie and observe HTTP 200 `{\"status\":\"pending\",\"task_id\":\"<hex>\"}`; the same request without the cookie returns HTTP 403 `{\"error\":\"需要管理员权限\"}`.",
+                "script_available": true
+              }
+            }
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Server-Side Request Forgery via urls parameter in /api/manual\n\nThe `urls` parameter of the `/api/manual` endpoint causes the application server to issue HTTP requests to attacker-controlled destinations without validating or restricting the target, enabling an authenticated administrator to reach loopback services on the same host."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SECURITY.md"
+                }
+              }
+            },
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/api/manual",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "67b6a76422626544f28de31271fddfbf305a5802ca33fe1e3b650fe7579991fe"
+          },
+          "properties": {
+            "security-severity": "2.7",
+            "strix_vuln_class_hash": "3c2d709ec9b841ee3a3706f4be108503e5d83adc1272069251861174d71641fe",
+            "synthetic_location": true,
+            "strix": {
+              "id": "vuln-0004",
+              "severity": "low",
+              "cvss": 2.7,
+              "timestamp": "2026-08-18 18:58:35 UTC",
+              "target": "http://165.154.226.119",
+              "endpoint": "/api/manual",
+              "method": "POST",
+              "cwe": "CWE-918",
+              "impact": "An authenticated administrator can force the application server to fetch arbitrary internal URLs. The validated proof-of-concept demonstrated server-side requests to loopback services on `127.0.0.1:8081`, `127.0.0.1:8000`, and `127.0.0.1:5566`, disclosing scanner-derived metadata about those services (discovered endpoints and the `gunicorn`/Flask server fingerprints). The response is limited to summarized scan results rather than full response bodies, and the same loopback services are also directly reachable on the public IP, which bounds the demonstrated confidentiality impact.",
+              "technical_analysis": "The `/api/manual` endpoint accepts a `urls` field and, when called with a valid administrator session, triggers a server-side scan of the supplied destination. The results are later exposed through `/api/results/{task_id}`. Because the destination is neither validated nor restricted, an authenticated administrator can direct the scanner at loopback hosts.\n\nThe following behavior was confirmed:\n\n- An unauthenticated `POST /api/manual` returns `403` with `{\"error\":\"需要管理员权限\"}`.\n- Authenticating via `POST /api/auth/login` with the default administrator credential returns a session cookie.\n- Submitting `{\"urls\":\"http://127.0.0.1:8081/\",\"scan_api\":true,\"online_query\":true}` returns `{\"status\":\"pending\",\"task_id\":\"<hex>\"}`.\n- Once the task completes, `GET /api/results/{task_id}` contains `assets[0].asset.url=http://127.0.0.1:8081/` and exposure findings enumerating httpbin endpoints (`/ip`, `/uuid`, `/user-agent`, `/headers`, `/get`, `/anything`, `/status/418`, `/digest-auth/...`), with `Server: gunicorn` disclosed.\n\nThe presence of the `gunicorn` server header in the scan results proves the exchange was a genuine HTTP transaction between the application server and the loopback service, not a client-side fetch. Internal fetches were also confirmed against `http://127.0.0.1:8000/` (enumerating `/api/fofa/config`, `/api/ai/config`, `/api/research/overview`, `/api/lab/overview`, `/api/manual`, `/api/analyze`) and `http://127.0.0.1:5566/health` (internal Flask fingerprint). `http://169.254.169.254/latest/meta-data/` was unreachable.\n\nThe root cause is missing destination validation on the `urls` input: the application treats a fully attacker-controlled URL as a scan target, follows it from the server, and reflects the scanner-derived service metadata back to the caller.",
+              "remediation_steps": "Validate and restrict the destination supplied in `urls` before any outbound request is made. Deny loopback, link-local, private, and reserved address ranges (including `127.0.0.0/8`, `169.254.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, and the cloud metadata address `169.254.169.254`), resolve hostnames before connecting and reject any that resolve to such ranges, and prefer an explicit allowlist of permitted destinations. Disable non-HTTP schemes such as `file`, `gopher`, `dict`, and `ftp`. Do not reflect scanner-derived internal service metadata (discovered endpoints, server headers, and fingerprints) back to clients, or redact it before returning results.",
+              "poc": {
+                "description": "1. Confirm the endpoint is gated: send `POST /api/manual` without a session cookie and observe the `403` response.\n2. Authenticate with `POST /api/auth/login` using the default administrator credential (`role=admin`, `password=admin123`).\n3. Submit `POST /api/manual` with the administrator session and body `{\"urls\":\"http://127.0.0.1:8081/\",\"scan_api\":true,\"online_query\":true}`.\n4. Read the `task_id` from the `{\"status\":\"pending\",\"task_id\":\"...\"}` response.\n5. Poll `GET /api/results/{task_id}` until the task leaves the pending state.\n6. Confirm the result record contains `assets[0].asset.url=http://127.0.0.1:8081/` and endpoint enumeration with the `Server: gunicorn` header, demonstrating the server-side loopback request.",
+                "script_available": true
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "syntheticLocationCount": 4
+      }
+    }
+  ]
+}
