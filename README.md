@@ -44,3 +44,8 @@
 防守方数据（服务器日志 + 数据库）与攻击方发现（Strix 报告）的交叉印证分析，含 SSRF 利用证据链：
 
 - [攻防数据对比.html](攻防数据对比.html) —— 可视化对比报告
+
+## 在线报告（GitHub Pages）
+
+- [攻防数据对比（在线渲染）](https://tajleonbennis-maker.github.io/chuhaijian_strix/攻防数据对比.html)
+- [165 漏洞报告（在线渲染）](https://tajleonbennis-maker.github.io/chuhaijian_strix/165漏洞报告.html)
